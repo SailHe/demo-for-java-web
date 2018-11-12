@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+	    http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/data/jpa
+        http://www.springframework.org/schema/data/jpa/spring-jpa.xsd
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- 设置spring支持注解方式 -->
+    <context:annotation-config/>
+    <!-- 设置项目类包的根目录 -->
+    <context:component-scan base-package="com.nit.lab"/>
+    <!-- 设置aop注解 -->
+    <aop:aspectj-autoproxy proxy-target-class="true"/>
+    <!-- 获取mysql数据库连接池配置信息 -->
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <value>classpath:config/jdbc.properties</value>
+        </property>
+    </bean>
+    <!-- 配置c3p0数据源连接池 -->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+          destroy-method="close">
+        <property name="driverClass" value="${jdbc.driverClassName}"/>
+        <property name="jdbcUrl" value="${jdbc.url}"/>
+        <property name="user" value="${jdbc.username}"/>
+        <property name="password" value="${jdbc.password}"/>
+        <property name="initialPoolSize" value="${connection.initialPoolSize}"/>
+        <property name="minPoolSize" value="${connection.minPoolSize}"/>
+        <property name="maxPoolSize" value="${connection.maxPoolSize}"/>
+        <property name="acquireIncrement" value="${connection.acquireIncrement}"/>
+        <property name="acquireRetryAttempts" value="${connection.acquireRetryAttempts}"/>
+        <property name="acquireRetryDelay" value="${connection.acquireRetryDelay}"/>
+        <property name="maxIdleTime" value="${connection.maxIdleTime}"/>
+        <property name="idleConnectionTestPeriod" value="${connection.idleConnectionTestPeriod}"/>
+        <property name="maxStatements" value="${connection.maxStatements}"/>
+        <property name="maxStatementsPerConnection" value="${connection.maxStatementsPerConnection}"/>
+        <property name="preferredTestQuery" value="select 1"/>
+        <property name="breakAfterAcquireFailure" value="true"/>
+        <property name="testConnectionOnCheckout" value="false"/>
+    </bean>
+    <!-- 指定实现JPA的适配器 -->
+    <bean id="hibernateJpaVendorAdapter"
+          class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+        <property name="databasePlatform" value="org.hibernate.dialect.MySQLDialect"/>
+    </bean>
+    <!-- 配置JPA实体管理工厂 -->
+    <bean id="entityManagerFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">        <!-- 设置c3p0数据源 -->
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 设置适配器 -->
+        <property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter"/>
+        <!-- 设置注解扫描的包 -->
+        <property name="packagesToScan" value="com.nit.lab.model"/>
+        <!-- 基本属性配置 -->
+        <property name="jpaProperties">
+            <props>
+                <prop key="hibernate.ejb.naming_strategy">org.hibernate.cfg.ImprovedNamingStrategy</prop>
+                <prop key="hibernate.show_sql">false</prop>
+                <prop key="hibernate.format_sql">false</prop>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQL5InnoDBDialect</prop>
+            </props>
+        </property>
+    </bean>
+    <!-- 配置事务管理 -->
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
+    <!-- 配置基于注解的事务 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    <!--配置spring data-->
+    <jpa:repositories base-package="com.nit.lab.repository" entity-manager-factory-ref="entityManagerFactory"
+                      transaction-manager-ref="transactionManager"></jpa:repositories>
+
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    <!-- 给view返回的指定页面名称添加前后缀 -->
+        <property name="prefix" value="/webpage/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+</beans>
